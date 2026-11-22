@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arcade Co-op Hub - Chơi Game Retro Online</title>
+    <title>Trạm Game Co-op - Chơi Game Cổ Điển Trực Tuyến</title>
     <style>
         :root {
             --bg-dark: #0d0f12;
@@ -45,6 +45,7 @@
         .join-box {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
         input[type="text"], select {
             background: var(--bg-dark);
@@ -74,7 +75,6 @@
         }
         button.secondary:hover { background: #384152; }
 
-        /* Lobby View */
         .container {
             max-width: 1100px;
             width: 100%;
@@ -124,7 +124,6 @@
         .game-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
         .card-actions { display: flex; flex-direction: column; gap: 8px; }
 
-        /* Room / Player View */
         #player-view { display: none; }
         .room-bar {
             background: var(--card-bg);
@@ -184,7 +183,7 @@
 <body>
 
 <header>
-    <div class="logo" onclick="goHome()">SEGA<span>CO-OP</span></div>
+    <div class="logo" onclick="goHome()">TRẠM GAME <span>CO-OP</span></div>
     <div class="join-box">
         <select id="quick-game-select"></select>
         <input type="text" id="join-code-input" placeholder="Nhập mã phòng (VD: X7K9P)" maxlength="10">
@@ -195,7 +194,7 @@
 <div class="container">
     <!-- MÀN HÌNH 1: SẢNH CHỌN GAME -->
     <div id="lobby-view">
-        <div class="section-title">Chọn Game Để Tạo Phòng Chơi Chung (2 Người)</div>
+        <div class="section-title">Chọn Trò Chơi Để Tạo Phòng Bắn Chung (2 Người)</div>
         <div class="games-grid" id="games-grid"></div>
     </div>
 
@@ -204,14 +203,14 @@
         <div class="room-bar">
             <div>
                 <span id="current-game-name" style="font-weight: bold; font-size: 18px; margin-right: 12px;"></span>
-                <span class="room-code-badge" id="display-room-code">ROOM: ------</span>
+                <span class="room-code-badge" id="display-room-code">MÃ PHÒNG: ------</span>
             </div>
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <label class="file-label" id="local-rom-picker">
-                    📂 Nạp ROM từ máy (.chd/.zip)
+                    📂 Chọn file game từ máy (.chd/.zip)
                     <input type="file" style="display:none" onchange="handleLocalFile(event)">
                 </label>
-                <button onclick="copyInviteLink()">🔗 Copy Link Mời Bạn</button>
+                <button onclick="copyInviteLink()">🔗 Sao Chép Link Mời Bạn</button>
                 <button class="secondary" onclick="goHome()">← Rời Phòng</button>
             </div>
         </div>
@@ -221,20 +220,18 @@
         </div>
 
         <div class="tips-box">
-            <strong>Hướng dẫn kết nối 2 người & Bắn súng bằng chuột:</strong><br>
-            1. <strong>Ghép phòng Netplay:</strong> Cả 2 người cùng mở link phòng này -> Rê chuột xuống thanh công cụ phía dưới màn hình game -> Bấm biểu tượng <strong>Netplay (Quả cầu/Mạng)</strong> -> Chủ phòng bấm <em>Create Room</em> (nhập tên/mã phòng khớp với mã trên), người kia bấm <em>Join Room</em>.<br>
-            2. <strong>Bật súng chuột (Lightgun):</strong> Bấm biểu tượng <strong>Tay cầm (Controls)</strong> ở thanh công cụ -> Đổi <em>Device Type</em> thành <strong>Virtua Gun / Lightgun</strong>. Di chuột để ngắm, chuột trái để bắn, chuột phải để nạp đạn.
+            <strong>Hướng dẫn ghép phòng 2 người & Bắn súng bằng chuột:</strong><br>
+            1. <strong>Kết nối 2 người (Chơi mạng):</strong> Cả 2 người cùng mở đường dẫn phòng này -> Rê chuột xuống thanh công cụ phía dưới màn hình game -> Bấm biểu tượng <strong>Chơi mạng (Quả cầu/Mạng LAN)</strong> -> Chủ phòng bấm <em>Tạo phòng (Create Room)</em>, người kia bấm <em>Vào phòng (Join Room)</em>.<br>
+            2. <strong>Chỉnh súng bắn bằng chuột:</strong> Bấm biểu tượng <strong>Tay cầm (Điều khiển)</strong> ở thanh công cụ -> Đổi <em>Loại thiết bị (Device Type)</em> sang <strong>Virtua Gun / Lightgun</strong>. Di chuột để ngắm, chuột trái để bắn, chuột phải để nạp đạn.
         </div>
     </div>
 </div>
 
-<!-- Nạp danh sách game -->
 <script src="games.js"></script>
 <script>
     let activeGame = null;
     let activeRoomCode = "";
 
-    // Khởi tạo giao diện sảnh
     function initLobby() {
         const grid = document.getElementById('games-grid');
         const select = document.getElementById('quick-game-select');
@@ -242,31 +239,28 @@
         select.innerHTML = '';
 
         GAMES_LIST.forEach(game => {
-            // Đổ vào dropdown thanh header
             const opt = document.createElement('option');
             opt.value = game.id;
             opt.textContent = game.title;
             select.appendChild(opt);
 
-            // Tạo thẻ game
             const card = document.createElement('div');
             card.className = 'game-card';
             card.innerHTML = `
-                <img src="${game.cover}" alt="${game.title}" class="game-cover" onerror="this.src='https://via.placeholder.com/300x220/181c23/e50914?text=NO+COVER'">
+                <img src="${game.cover}" alt="${game.title}" class="game-cover" onerror="this.src='https://via.placeholder.com/300x220/181c23/e50914?text=KHONG+CO+ANH'">
                 <div class="game-info">
                     <div>
                         <div class="game-title">${game.title}</div>
                         <div class="game-meta">${game.system}<br>${game.players}</div>
                     </div>
                     <div class="card-actions">
-                        <button onclick="createRoom('${game.id}')">➕ Tạo Phòng Online</button>
+                        <button onclick="createRoom('${game.id}')">➕ Tạo Phòng Chơi Chung</button>
                     </div>
                 </div>
             `;
             grid.appendChild(card);
         });
 
-        // Kiểm tra nếu URL có sẵn ?game=...&room=... thì tự động vào phòng
         const params = new URLSearchParams(window.location.search);
         const gameId = params.get('game');
         const roomCode = params.get('room');
@@ -275,7 +269,6 @@
         }
     }
 
-    // Sinh mã phòng 5 ký tự ngẫu nhiên
     function generateRoomCode() {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         let code = '';
@@ -303,31 +296,28 @@
     function enterRoom(gameId, roomCode) {
         const game = GAMES_LIST.find(g => g.id === gameId);
         if (!game) {
-            alert('Không tìm thấy game này!');
+            alert('Không tìm thấy trò chơi này!');
             return;
         }
 
         activeGame = game;
         activeRoomCode = roomCode;
 
-        // Cập nhật URL để dễ copy gửi bạn bè
         const newUrl = `${window.location.pathname}?game=${game.id}&room=${roomCode}`;
         window.history.pushState({ path: newUrl }, '', newUrl);
 
-        // Chuyển giao diện sang phòng chơi
         document.getElementById('lobby-view').style.display = 'none';
         document.getElementById('player-view').style.display = 'block';
         document.getElementById('current-game-name').textContent = game.title;
         document.getElementById('display-room-code').textContent = `MÃ PHÒNG: ${roomCode}`;
 
-        // Nếu game đã có sẵn link ROM thì chạy luôn, chưa có thì nhắc chọn file từ máy
         if (game.romUrl && game.romUrl.trim() !== "") {
             bootEmulator(game.core, game.romUrl, roomCode);
         } else {
             document.getElementById('emulator-wrapper').innerHTML = `
                 <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-align:center; padding:20px;">
-                    <p style="font-size:16px; margin-bottom:12px;">Game này chưa gắn link ROM trực tuyến trên server.</p>
-                    <p style="font-size:14px;">Hãy bấm nút <strong>"📂 Nạp ROM từ máy (.chd/.zip)"</strong> ở góc trên bên phải để chọn file ROM từ máy tính của bạn!</p>
+                    <p style="font-size:16px; margin-bottom:12px;">Trò chơi này chưa gắn đường dẫn tải tự động.</p>
+                    <p style="font-size:14px;">Hãy bấm nút <strong>"📂 Chọn file game từ máy (.chd/.zip)"</strong> ở góc trên bên phải để nạp file từ máy tính của bạn!</p>
                 </div>
             `;
         }
@@ -349,7 +339,10 @@
         window.EJS_gameUrl = romUrl;
         window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
         window.EJS_netplayUrl = 'https://netplay.emulatorjs.org';
-        window.EJS_gameID = `${activeGame.id}_${roomCode}`; // Gắn ID theo mã phòng
+        window.EJS_gameID = `${activeGame.id}_${roomCode}`;
+        
+        // Chuyển toàn bộ giao diện và menu cài đặt trình giả lập sang tiếng Việt
+        window.EJS_language = 'vi-VN';
 
         const oldScript = document.getElementById('ejs-script');
         if (oldScript) oldScript.remove();
@@ -362,13 +355,13 @@
 
     function copyInviteLink() {
         navigator.clipboard.writeText(window.location.href).then(() => {
-            alert(`Đã copy link phòng (${activeRoomCode})! Gửi link này cho bạn bè để cùng vào bắn.`);
+            alert(`Đã sao chép link phòng (${activeRoomCode})! Gửi link này cho bạn bè để cùng vào chơi.`);
         });
     }
 
     function goHome() {
         window.history.pushState({}, '', window.location.pathname);
-        location.reload(); // Reload để giải phóng bộ nhớ WebAssembly của giả lập
+        location.reload();
     }
 
     initLobby();

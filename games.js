@@ -6,7 +6,7 @@ const GAMES_LIST = [
         system: "Sega Saturn (1998)",
         core: "segaSaturn", // Core giả lập Saturn
         // Thay bằng link GitHub Releases nếu file > 100MB, hoặc để "roms/hotd1.chd" nếu <= 100MB
-        romUrl: "https://corsproxy.io/?https://github.com/tom4n/web-game-2/releases/download/1.0/THOTD.chd", 
+        romUrl: "https://archive.org/download/THOTD/THOTD.chd", 
         cover: "https://upload.wikimedia.org/wikipedia/en/2/23/The_House_of_the_Dead_cover.jpg",
         players: "1-2 Người (Lightgun / Chuột)"
     },

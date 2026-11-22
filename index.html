@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Co-op Hub - Chơi Game Retro Online</title>
+    <style>
+        :root {
+            --bg-dark: #0d0f12;
+            --card-bg: #181c23;
+            --accent: #e50914;
+            --accent-hover: #ff1f2c;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #2a303c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background: #12151a;
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--accent);
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .logo span { color: #fff; }
+        .join-box {
+            display: flex;
+            gap: 8px;
+        }
+        input[type="text"], select {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+        input[type="text"]:focus { border-color: var(--accent); }
+        button {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        button:hover { background: var(--accent-hover); }
+        button.secondary {
+            background: #2a303c;
+            color: #e2e8f0;
+        }
+        button.secondary:hover { background: #384152; }
+
+        /* Lobby View */
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 30px auto;
+            padding: 0 20px;
+            flex: 1;
+        }
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+            border-left: 4px solid var(--accent);
+            padding-left: 12px;
+        }
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 24px;
+        }
+        .game-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .game-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+        .game-cover {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            background: #000;
+        }
+        .game-info {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .game-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+        .game-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+        .card-actions { display: flex; flex-direction: column; gap: 8px; }
+
+        /* Room / Player View */
+        #player-view { display: none; }
+        .room-bar {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 14px 20px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .room-code-badge {
+            background: #000;
+            border: 1px dashed var(--accent);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 16px;
+            color: #ff4d4d;
+            font-weight: bold;
+        }
+        #emulator-wrapper {
+            width: 100%;
+            height: 70vh;
+            min-height: 480px;
+            background: #000;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .tips-box {
+            margin-top: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+        .tips-box strong { color: #fff; }
+        .file-label {
+            display: inline-block;
+            background: #2a303c;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: center;
+        }
+        .file-label:hover { background: #384152; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo" onclick="goHome()">SEGA<span>CO-OP</span></div>
+    <div class="join-box">
+        <select id="quick-game-select"></select>
+        <input type="text" id="join-code-input" placeholder="Nhập mã phòng (VD: X7K9P)" maxlength="10">
+        <button onclick="joinByCode()">Vào Phòng</button>
+    </div>
+</header>
+
+<div class="container">
+    <!-- MÀN HÌNH 1: SẢNH CHỌN GAME -->
+    <div id="lobby-view">
+        <div class="section-title">Chọn Game Để Tạo Phòng Chơi Chung (2 Người)</div>
+        <div class="games-grid" id="games-grid"></div>
+    </div>
+
+    <!-- MÀN HÌNH 2: PHÒNG CHƠI GAME -->
+    <div id="player-view">
+        <div class="room-bar">
+            <div>
+                <span id="current-game-name" style="font-weight: bold; font-size: 18px; margin-right: 12px;"></span>
+                <span class="room-code-badge" id="display-room-code">ROOM: ------</span>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label class="file-label" id="local-rom-picker">
+                    📂 Nạp ROM từ máy (.chd/.zip)
+                    <input type="file" style="display:none" onchange="handleLocalFile(event)">
+                </label>
+                <button onclick="copyInviteLink()">🔗 Copy Link Mời Bạn</button>
+                <button class="secondary" onclick="goHome()">← Rời Phòng</button>
+            </div>
+        </div>
+
+        <div id="emulator-wrapper">
+            <div id="game"></div>
+        </div>
+
+        <div class="tips-box">
+            <strong>Hướng dẫn kết nối 2 người & Bắn súng bằng chuột:</strong><br>
+            1. <strong>Ghép phòng Netplay:</strong> Cả 2 người cùng mở link phòng này -> Rê chuột xuống thanh công cụ phía dưới màn hình game -> Bấm biểu tượng <strong>Netplay (Quả cầu/Mạng)</strong> -> Chủ phòng bấm <em>Create Room</em> (nhập tên/mã phòng khớp với mã trên), người kia bấm <em>Join Room</em>.<br>
+            2. <strong>Bật súng chuột (Lightgun):</strong> Bấm biểu tượng <strong>Tay cầm (Controls)</strong> ở thanh công cụ -> Đổi <em>Device Type</em> thành <strong>Virtua Gun / Lightgun</strong>. Di chuột để ngắm, chuột trái để bắn, chuột phải để nạp đạn.
+        </div>
+    </div>
+</div>
+
+<!-- Nạp danh sách game -->
+<script src="games.js"></script>
+<script>
+    let activeGame = null;
+    let activeRoomCode = "";
+
+    // Khởi tạo giao diện sảnh
+    function initLobby() {
+        const grid = document.getElementById('games-grid');
+        const select = document.getElementById('quick-game-select');
+        grid.innerHTML = '';
+        select.innerHTML = '';
+
+        GAMES_LIST.forEach(game => {
+            // Đổ vào dropdown thanh header
+            const opt = document.createElement('option');
+            opt.value = game.id;
+            opt.textContent = game.title;
+            select.appendChild(opt);
+
+            // Tạo thẻ game
+            const card = document.createElement('div');
+            card.className = 'game-card';
+            card.innerHTML = `
+                <img src="${game.cover}" alt="${game.title}" class="game-cover" onerror="this.src='https://via.placeholder.com/300x220/181c23/e50914?text=NO+COVER'">
+                <div class="game-info">
+                    <div>
+                        <div class="game-title">${game.title}</div>
+                        <div class="game-meta">${game.system}<br>${game.players}</div>
+                    </div>
+                    <div class="card-actions">
+                        <button onclick="createRoom('${game.id}')">➕ Tạo Phòng Online</button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        // Kiểm tra nếu URL có sẵn ?game=...&room=... thì tự động vào phòng
+        const params = new URLSearchParams(window.location.search);
+        const gameId = params.get('game');
+        const roomCode = params.get('room');
+        if (gameId && roomCode) {
+            enterRoom(gameId, roomCode.toUpperCase());
+        }
+    }
+
+    // Sinh mã phòng 5 ký tự ngẫu nhiên
+    function generateRoomCode() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        for (let i = 0; i < 5; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    }
+
+    function createRoom(gameId) {
+        const code = generateRoomCode();
+        enterRoom(gameId, code);
+    }
+
+    function joinByCode() {
+        const gameId = document.getElementById('quick-game-select').value;
+        const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+        if (!code) {
+            alert('Vui lòng nhập mã phòng bạn bè đã gửi!');
+            return;
+        }
+        enterRoom(gameId, code);
+    }
+
+    function enterRoom(gameId, roomCode) {
+        const game = GAMES_LIST.find(g => g.id === gameId);
+        if (!game) {
+            alert('Không tìm thấy game này!');
+            return;
+        }
+
+        activeGame = game;
+        activeRoomCode = roomCode;
+
+        // Cập nhật URL để dễ copy gửi bạn bè
+        const newUrl = `${window.location.pathname}?game=${game.id}&room=${roomCode}`;
+        window.history.pushState({ path: newUrl }, '', newUrl);
+
+        // Chuyển giao diện sang phòng chơi
+        document.getElementById('lobby-view').style.display = 'none';
+        document.getElementById('player-view').style.display = 'block';
+        document.getElementById('current-game-name').textContent = game.title;
+        document.getElementById('display-room-code').textContent = `MÃ PHÒNG: ${roomCode}`;
+
+        // Nếu game đã có sẵn link ROM thì chạy luôn, chưa có thì nhắc chọn file từ máy
+        if (game.romUrl && game.romUrl.trim() !== "") {
+            bootEmulator(game.core, game.romUrl, roomCode);
+        } else {
+            document.getElementById('emulator-wrapper').innerHTML = `
+                <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-align:center; padding:20px;">
+                    <p style="font-size:16px; margin-bottom:12px;">Game này chưa gắn link ROM trực tuyến trên server.</p>
+                    <p style="font-size:14px;">Hãy bấm nút <strong>"📂 Nạp ROM từ máy (.chd/.zip)"</strong> ở góc trên bên phải để chọn file ROM từ máy tính của bạn!</p>
+                </div>
+            `;
+        }
+    }
+
+    function handleLocalFile(event) {
+        const file = event.target.files[0];
+        if (!file || !activeGame) return;
+        const blobUrl = URL.createObjectURL(file);
+        bootEmulator(activeGame.core, blobUrl, activeRoomCode);
+    }
+
+    function bootEmulator(core, romUrl, roomCode) {
+        const wrapper = document.getElementById('emulator-wrapper');
+        wrapper.innerHTML = '<div id="game"></div>';
+
+        window.EJS_player = '#game';
+        window.EJS_core = core;
+        window.EJS_gameUrl = romUrl;
+        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+        window.EJS_netplayUrl = 'https://netplay.emulatorjs.org';
+        window.EJS_gameID = `${activeGame.id}_${roomCode}`; // Gắn ID theo mã phòng
+
+        const oldScript = document.getElementById('ejs-script');
+        if (oldScript) oldScript.remove();
+
+        const script = document.createElement('script');
+        script.id = 'ejs-script';
+        script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+        document.body.appendChild(script);
+    }
+
+    function copyInviteLink() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert(`Đã copy link phòng (${activeRoomCode})! Gửi link này cho bạn bè để cùng vào bắn.`);
+        });
+    }
+
+    function goHome() {
+        window.history.pushState({}, '', window.location.pathname);
+        location.reload(); // Reload để giải phóng bộ nhớ WebAssembly của giả lập
+    }
+
+    initLobby();
+</script>
+</body>
+</html>
